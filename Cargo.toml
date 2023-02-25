@@ -1,0 +1,8 @@
+[package]
+name = "lifeline"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+llvm-ir = { version = "0.8.2", features = ["llvm-13"] }
+llvm-ir-analysis = { version = "0.3.1", features = ["llvm-13"] }
