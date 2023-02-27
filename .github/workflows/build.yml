@@ -18,7 +18,7 @@ jobs:
     - name: Install LLVM and Clang
       uses: KyleMayes/install-llvm-action@v1
       with:
-        version: "13.0"
+        version: "13"
         env: true
     - name: Build
       run: LLVM_SYS_130_PREFIX=${{ env.LLVM_PATH }} cargo build --verbose
