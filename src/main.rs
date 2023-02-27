@@ -1,6 +1,6 @@
-mod analysis;
+use lifeline::*;
 use llvm_ir::{Module};
-use analysis::*;
+use lifeline::analysis::*;
 
 fn main() {
     let bytecode_path_opt = std::env::args().nth(1);
@@ -9,8 +9,8 @@ fn main() {
             let opt_module = Module::from_bc_path(bytecode_path);
             match opt_module {
                 Ok(module) => {
-                    let lifetimes:ProgramLifetimes = ProgramLifetimes::new(&module);
-                    println!("{}", lifetimes);
+                    let mut lifetimes:ProgramLifetimes = ProgramLifetimes::new(&module);
+                    print!("{}", results::pretty_print_module(&mut lifetimes, &module));
                 }
                 Err(msg) => {
                     eprintln!("{}", msg);
