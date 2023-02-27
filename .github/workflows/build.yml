@@ -20,6 +20,8 @@ jobs:
       with:
         version: "13"
         env: true
+    - name: llvm-config
+      run: llvm-config --version
     - name: Build
       run: LLVM_SYS_130_PREFIX=${{ env.LLVM_PATH }} cargo build --verbose
     - name: Run tests
