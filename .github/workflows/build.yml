@@ -20,8 +20,8 @@ jobs:
       with:
         version: "13"
         env: true
-    - name: llvm-config
-      run: llvm-config --version
+    - name: Install libncurses
+      run: sudo apt install -y libncurses5
     - name: Build
       run: LLVM_SYS_130_PREFIX=${{ env.LLVM_PATH }} cargo build --verbose
     - name: Run tests
