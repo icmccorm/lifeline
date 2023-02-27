@@ -9,9 +9,6 @@ use std::{
     fmt,
 };
 
-const ALPHABET_SIZE: usize = 26;
-const LOWERCASE_A_OFFSET: usize = 97;
-
 #[derive(Clone, PartialEq, Eq, Hash, Debug)]
 pub enum Lifetime {
     Local,

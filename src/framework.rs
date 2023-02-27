@@ -1,14 +1,11 @@
-use llvm_ir::{Function, Instruction, function::Parameter};
+use llvm_ir::{function::Parameter, Function, Instruction};
 
 pub trait Analysis {
-    fn init_param(&mut self, param: & Parameter);
+    fn init_param(&mut self, param: &Parameter);
     fn transfer(&mut self, inst: &Instruction);
     fn on_completion(&mut self);
 }
-pub fn run_analysis<'a>(
-    state: &mut dyn Analysis,
-    func: &'a Function,
-) {
+pub fn run_analysis<'a>(state: &mut dyn Analysis, func: &'a Function) {
     for param in &func.parameters {
         state.init_param(&param)
     }
@@ -19,4 +16,3 @@ pub fn run_analysis<'a>(
     }
     state.on_completion()
 }
-

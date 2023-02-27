@@ -3,7 +3,7 @@ use lifeline;
 use lifeline::analysis::ProgramLifetimes;
 use llvm_ir::Module;
 use std::env::temp_dir;
-use std::fs::{File, self};
+use std::fs::{self, File};
 use std::io::Write;
 use std::process::Command;
 
@@ -42,21 +42,24 @@ fn assert_lt(c_function: &str, contract: &str) {
 
 #[test]
 fn test_single_ptr() {
-    assert_lt("
+    assert_lt(
+        "
     void test(int * a) {
         int get = *a;
     };
-    ", 
-    "('a)");
+    ",
+        "('a)",
+    );
 }
 
 #[test]
 fn test_double_ptr() {
-    assert_lt("
+    assert_lt(
+        "
     void test(int * * a) {
         int * get = *a;
     };
-    ", 
-    "('a, 'b)");
+    ",
+        "('a, 'b)",
+    );
 }
-

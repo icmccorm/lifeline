@@ -1,13 +1,13 @@
-use ena::unify::{UnifyKey, EqUnifyValue};
-use llvm_ir::{Instruction, Module, Name, TypeRef, Operand, instruction::Call};
-use std::{collections::HashMap, fmt};
 use either;
+use ena::unify::{EqUnifyValue, UnifyKey};
+use llvm_ir::{instruction::Call, Instruction, Module, Name, Operand, TypeRef};
+use std::{collections::HashMap, fmt};
 
-use crate::framework::Analysis;
 use crate::framework::run_analysis;
+use crate::framework::Analysis;
 use crate::lifetimes::LifetimeCtx;
 
-const MALLOC:&str = "malloc";
+const MALLOC: &str = "malloc";
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
 struct IntKey(u32);
 impl UnifyKey for IntKey {
@@ -40,17 +40,17 @@ pub struct ProgramLifetimes {
 #[derive(Default)]
 pub struct IntraLifetimeAnalysis {
     _typ_ctx: HashMap<Name, TypeRef>,
-    pub lt_ctx: LifetimeCtx
+    pub lt_ctx: LifetimeCtx,
 }
 
 impl Analysis for IntraLifetimeAnalysis {
-    fn init_param(&mut self, param: & llvm_ir::function::Parameter) {
+    fn init_param(&mut self, param: &llvm_ir::function::Parameter) {
         self.lt_ctx.register_parameter_lifetimes(&param);
     }
 
     fn on_completion(&mut self) {
         self.lt_ctx.finalize()
-    }   
+    }
 
     fn transfer(&mut self, inst: &Instruction) {
         match inst {
@@ -58,39 +58,43 @@ impl Analysis for IntraLifetimeAnalysis {
             Instruction::Load(load) => set_equal(self, &load.address, &load.dest),
             Instruction::Store(st) => {
                 let source_lts = match &st.value {
-                    llvm_ir::Operand::LocalOperand { name, ty } => self.lt_ctx.register_lifetimes(&name, &ty),
+                    llvm_ir::Operand::LocalOperand { name, ty } => {
+                        self.lt_ctx.register_lifetimes(&name, &ty)
+                    }
                     llvm_ir::Operand::MetadataOperand => vec![],
                     llvm_ir::Operand::ConstantOperand(_) => todo!(),
                 };
                 let dest_lts = match &st.address {
-                    llvm_ir::Operand::LocalOperand { name, ty } => self.lt_ctx.register_lifetimes(&name, &ty),
+                    llvm_ir::Operand::LocalOperand { name, ty } => {
+                        self.lt_ctx.register_lifetimes(&name, &ty)
+                    }
                     llvm_ir::Operand::MetadataOperand => vec![],
                     llvm_ir::Operand::ConstantOperand(_) => todo!(),
                 };
 
                 match &dest_lts[..] {
                     [_, tail @ ..] => {
-                        let mut constrained:Vec<(&u32, &u32)> = source_lts.iter().zip(tail.iter()).collect();
-                        match & mut *constrained {
-                            [(l,r), tail @ ..] => {
+                        let mut constrained: Vec<(&u32, &u32)> =
+                            source_lts.iter().zip(tail.iter()).collect();
+                        match &mut *constrained {
+                            [(l, r), tail @ ..] => {
                                 self.lt_ctx.generate_outlives(**l, **r);
                                 for (tl, tr) in tail.iter() {
                                     self.lt_ctx.generate_equality(**tl, **tr);
                                 }
-                            },
-                            _ => ()
+                            }
+                            _ => (),
                         }
-                    },
-                    _ => ()
-                }          
+                    }
+                    _ => (),
+                }
             }
             Instruction::BitCast(bc) => set_equal(self, &bc.operand, &bc.dest),
-            Instruction::Call(cl) => {
-                match &cl.function {
-                    either::Either::Left(_) => { todo!() },
-                    either::Either::Right(func) => transfer_call(self, &cl, &func)
-    
+            Instruction::Call(cl) => match &cl.function {
+                either::Either::Left(_) => {
+                    todo!()
                 }
+                either::Either::Right(func) => transfer_call(self, &cl, &func),
             },
             _ => todo!(),
         }
@@ -98,14 +102,15 @@ impl Analysis for IntraLifetimeAnalysis {
 }
 
 fn set_equal(lifetimes: &mut IntraLifetimeAnalysis, source: &Operand, dest: &Name) {
-    match &*source{
+    match &*source {
         Operand::LocalOperand { name, ty } => {
             let source_lts = lifetimes.lt_ctx.register_lifetimes(&name, &ty);
             let dest_lts = lifetimes.lt_ctx.register_lifetimes(dest, &ty);
-            source_lts.iter().zip(dest_lts.iter()).for_each(|(left, right)| {
-                lifetimes.lt_ctx.generate_equality(*left, *right)
-            });
-        },
+            source_lts
+                .iter()
+                .zip(dest_lts.iter())
+                .for_each(|(left, right)| lifetimes.lt_ctx.generate_equality(*left, *right));
+        }
         Operand::ConstantOperand(_) => todo!(),
         Operand::MetadataOperand => todo!(),
     }
@@ -119,37 +124,29 @@ impl ProgramLifetimes {
         for a in module.functions.iter() {
             let function_name = a.name.to_owned();
             let mut analysis = IntraLifetimeAnalysis::default();
-            run_analysis(& mut analysis, &a);
+            run_analysis(&mut analysis, &a);
             program_lifetimes.results.insert(function_name, analysis);
         }
         program_lifetimes
     }
 }
 
-fn transfer_call(_lifetimes: &mut IntraLifetimeAnalysis, cl: &Call, func: &Operand){
+fn transfer_call(_lifetimes: &mut IntraLifetimeAnalysis, cl: &Call, func: &Operand) {
     match func {
-        Operand::LocalOperand { name:_, ty:_ } => todo!(),
-        Operand::ConstantOperand(cr) => {
-            match cr.as_ref() {
-                llvm_ir::Constant::GlobalReference { name, ty:_ } => {
-                    match name.to_string().as_str() {
-                        MALLOC => {
-                            match &cl.dest {
-                                Some(_nm) => {
-          
-                                }
-                                None => {
-                                    todo!();
-                                }
-                            }
-                        },
-                        _ => {
-                            todo!()
-                        }
+        Operand::LocalOperand { name: _, ty: _ } => todo!(),
+        Operand::ConstantOperand(cr) => match cr.as_ref() {
+            llvm_ir::Constant::GlobalReference { name, ty: _ } => match name.to_string().as_str() {
+                MALLOC => match &cl.dest {
+                    Some(_nm) => {}
+                    None => {
+                        todo!();
                     }
                 },
-                _ => todo!(),
-            }
+                _ => {
+                    todo!()
+                }
+            },
+            _ => todo!(),
         },
         Operand::MetadataOperand => todo!(),
     }
@@ -164,7 +161,6 @@ impl fmt::Display for IntraLifetimeAnalysis {
 impl fmt::Display for ProgramLifetimes {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let res = self.results.iter().fold("".to_string(), |acc, res| {
-
             acc + format!("{}: {}\r\n", res.0, res.1).as_str()
         });
         write!(f, "{}", res)

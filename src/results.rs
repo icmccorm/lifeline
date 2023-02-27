@@ -4,16 +4,21 @@ use llvm_ir::{Function, Module /*Name, TypeRef*/};
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 
-pub fn pretty_print_module(pl: &mut ProgramLifetimes, module: &Module) -> String{
-    module.functions.iter().map(|func| {
-        let function_lifetimes = pl.results.get_mut(&func.name);
-        match function_lifetimes {
-            Some(mut f) => pretty_print_function(&mut f, &func),
-            None => "".to_string(),
-        }
-    }).collect::<Vec<_>>().join("\r\n")
+pub fn pretty_print_module(pl: &mut ProgramLifetimes, module: &Module) -> String {
+    module
+        .functions
+        .iter()
+        .map(|func| {
+            let function_lifetimes = pl.results.get_mut(&func.name);
+            match function_lifetimes {
+                Some(mut f) => pretty_print_function(&mut f, &func),
+                None => "".to_string(),
+            }
+        })
+        .collect::<Vec<_>>()
+        .join("\r\n")
 }
-pub fn pretty_print_function(ila: &mut IntraLifetimeAnalysis, func: &Function)-> String {
+pub fn pretty_print_function(ila: &mut IntraLifetimeAnalysis, func: &Function) -> String {
     let mut lifetime_counter: u32 = 0;
     let mut printed_annotations = HashMap::<u32, u32>::default();
 
