@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":[["Lifetime",""]],"fn":[["get_lifetimes",""]],"struct":[["LifetimeCtx",""]],"type":[["LifetimeID",""]]};

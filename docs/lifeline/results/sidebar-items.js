@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":[["pretty_print_function",""],["pretty_print_module",""]]};
