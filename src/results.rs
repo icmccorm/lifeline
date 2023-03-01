@@ -9,7 +9,7 @@ pub fn pretty_print_module(pl: &mut ProgramLifetimes, module: &Module) -> String
             let function_lifetimes = pl.results.get_mut(&func.name);
             match function_lifetimes {
                 Some(f) => f.to_string(),
-                None => format!("Unable to generate lifetimes for function {}", func.name)
+                None => format!("Unable to generate lifetimes for function {}", func.name),
             }
         })
         .collect::<Vec<_>>()

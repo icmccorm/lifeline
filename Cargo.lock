@@ -181,6 +181,7 @@ dependencies = [
  "llvm-ir",
  "llvm-ir-analysis",
  "llvm-sys",
+ "log",
  "petgraph",
  "uuid",
  "which",

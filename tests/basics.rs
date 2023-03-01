@@ -25,7 +25,6 @@ fn run_inference(str: &str) -> String {
         fs::remove_file(bc_path.as_str()).unwrap();
         let mut lifetimes: ProgramLifetimes = ProgramLifetimes::new(&module);
         lifeline::results::pretty_print_module(&mut lifetimes, &module)
-        
     } else {
         eprintln!("Failed to compile test binary.");
         std::process::exit(1);
@@ -79,7 +78,7 @@ fn test_double_double_ptr() {
         "('a, 'b) -> ('c, 'd)",
     );
 }
-/* 
+/*
 #[test]
 fn test_assign_deref_single() {
     assert_lt(

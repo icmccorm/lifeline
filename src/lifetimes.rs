@@ -3,7 +3,7 @@ use crate::utilities::usize_to_string;
 use llvm_ir::Function;
 use llvm_ir::{function::Parameter, Name, TypeRef};
 use petgraph::algo::tarjan_scc;
-use petgraph::stable_graph::{NodeIndex, StableGraph};
+use petgraph::stable_graph::{NodeIndex};
 use petgraph::{prelude::StableDiGraph, Direction::Outgoing};
 use std::{
     collections::{hash_map::Entry, HashMap},
@@ -67,7 +67,7 @@ impl fmt::Display for FunctionLifetimes {
             .collect::<Vec<_>>()
             .join(" -> ");
 
-        if self.constraints.len() > 0 {
+        if self.constraints.is_empty() {
             let str_rep_constraints = self
                 .constraints
                 .iter()
@@ -98,6 +98,7 @@ impl fmt::Display for AbstractLocation {
     }
 }
 
+#[derive(Default)]
 pub struct LifetimeCtx {
     lifetime_counter: u32,
     pub lifetime_ids: HashMap<AbstractLocation, Lifetime>,
@@ -106,19 +107,7 @@ pub struct LifetimeCtx {
     pub lifetime_node_indices: HashMap<Lifetime, NodeIndex>,
 }
 
-impl Default for LifetimeCtx {
-    fn default() -> Self {
-        LifetimeCtx {
-            lifetime_counter: 0,
-            lifetime_ids: HashMap::default(),
-            constraints: StableGraph::default(),
-            unification: DSU::default(),
-            lifetime_node_indices: HashMap::default(),
-        }
-    }
-}
-
-impl<'a> LifetimeCtx {
+impl LifetimeCtx {
     fn register(&mut self, lt: AbstractLocation) -> Lifetime {
         let registered_lifetime = if lt.indirection == 0 {
             Lifetime::Local
@@ -207,24 +196,23 @@ impl<'a> LifetimeCtx {
         let parameters = func
             .parameters
             .iter()
-            .map(|p| self.get_solved_parameter_lifetimes(&p))
+            .map(|p| self.get_solved_parameter_lifetimes(p))
             .collect();
 
         // TODO: Fix constraints generation.
-        // Have it take a set of parameter lifetimes from 'parameters' above 
+        // Have it take a set of parameter lifetimes from 'parameters' above
         // and simplify constraints to only contain those lifetimes.
 
         let _constraints = self.get_constraints();
 
         FunctionLifetimes {
-            parameters: parameters,
+            parameters,
             return_variable: vec![],
             constraints: vec![],
         }
     }
 
     fn get_constraints(&self) -> Vec<(Lifetime, Lifetime)> {
-
         let lifetime_id_pairs: Vec<(Lifetime, Lifetime)> = self
             .constraints
             .node_indices()
@@ -239,7 +227,6 @@ impl<'a> LifetimeCtx {
                     })
                     .collect()
             })
-
             .fold(vec![], |mut acc, v: Vec<(Lifetime, Lifetime)>| {
                 acc.extend(v.iter());
                 acc
@@ -283,7 +270,7 @@ impl fmt::Display for LifetimeCtx {
                                 .to_string()
                         })
                         .collect::<Vec<_>>();
-                    if lt_list.len() > 0 {
+                    if lt_list.is_empty() {
                         acc + format!("{} >= {{{}}}\r\n", root, lt_list.join(",")).as_str()
                     } else {
                         acc

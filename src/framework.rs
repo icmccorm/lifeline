@@ -8,11 +8,11 @@ pub trait FunctionPass<T> {
 
 pub fn run_function_pass<T>(state: &mut dyn FunctionPass<T>, func: &Function) -> T {
     for param in &func.parameters {
-        state.init_param(&param)
+        state.init_param(param)
     }
     for block in func.basic_blocks.iter() {
         for inst in block.instrs.iter() {
-            state.transfer(&inst);
+            state.transfer(inst);
         }
     }
     state.on_completion(func)
