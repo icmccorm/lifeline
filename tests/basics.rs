@@ -2,26 +2,30 @@ use lifeline;
 
 use lifeline::analysis::ProgramLifetimes;
 use llvm_ir::Module;
-use std::env::temp_dir;
 use std::fs::{self, File};
 use std::io::Write;
 use std::process::Command;
+use which::which;
 
 fn run_inference(str: &str) -> String {
     let mut tempfile = temp_file();
     tempfile.1.write_all(str.as_bytes()).unwrap();
     tempfile.1.flush().unwrap();
     let bc_path = format!("{}.bc", tempfile.0.clone());
-    let bytecode_compilation_succeeded = Command::new("clang")
+
+    let clang_path = which("clang").unwrap();
+    let bytecode_compilation_succeeded = Command::new(clang_path)
         .args(["-emit-llvm", "-o", bc_path.as_str(), "-c", &tempfile.0])
         .output()
         .is_ok();
+
     if bytecode_compilation_succeeded {
         fs::remove_file(tempfile.0).unwrap();
         let module = Module::from_bc_path(bc_path.as_str()).unwrap();
         fs::remove_file(bc_path.as_str()).unwrap();
         let mut lifetimes: ProgramLifetimes = ProgramLifetimes::new(&module);
         lifeline::results::pretty_print_module(&mut lifetimes, &module)
+        
     } else {
         eprintln!("Failed to compile test binary.");
         std::process::exit(1);
@@ -63,3 +67,40 @@ fn test_double_ptr() {
         "('a, 'b)",
     );
 }
+
+#[test]
+fn test_double_double_ptr() {
+    assert_lt(
+        "
+    void test(int * * a, int * * b) {
+        int * get = *a;
+    };
+    ",
+        "('a, 'b) -> ('c, 'd)",
+    );
+}
+/* 
+#[test]
+fn test_assign_deref_single() {
+    assert_lt(
+        "
+    void test(int * a, int * b) {
+        *a = *b;
+    };
+    ",
+        "('a) -> ('b)",
+    );
+}
+
+#[test]
+fn test_assign_deref_double() {
+    assert_lt(
+        "
+    void test(int * * a, int * * b) {
+        *a = *b;
+    };
+    ",
+        "('a, 'b) -> ('c, 'd) where 'd >= 'b",
+    );
+}
+*/

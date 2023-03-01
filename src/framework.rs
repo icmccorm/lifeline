@@ -1,11 +1,12 @@
 use llvm_ir::{function::Parameter, Function, Instruction};
 
-pub trait Analysis {
+pub trait FunctionPass<T> {
     fn init_param(&mut self, param: &Parameter);
     fn transfer(&mut self, inst: &Instruction);
-    fn on_completion(&mut self);
+    fn on_completion(&mut self, func: &Function) -> T;
 }
-pub fn run_analysis<'a>(state: &mut dyn Analysis, func: &'a Function) {
+
+pub fn run_function_pass<T>(state: &mut dyn FunctionPass<T>, func: &Function) -> T {
     for param in &func.parameters {
         state.init_param(&param)
     }
@@ -14,5 +15,6 @@ pub fn run_analysis<'a>(state: &mut dyn Analysis, func: &'a Function) {
             state.transfer(&inst);
         }
     }
-    state.on_completion()
+    state.on_completion(func)
 }
+pub trait ProgramPass {}
